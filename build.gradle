@@ -1,0 +1,46 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.4.4'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.xdman'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+ext {
+	berTlvVersion = '1.0-11'  // Added version for ber-tlv dependency
+	bouncycastleVersion = '1.77'  // Added version for Bouncy Castle
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation "com.payneteasy:ber-tlv:${berTlvVersion}"
+
+	// Bouncy Castle dependencies
+	implementation "org.bouncycastle:bcprov-jdk18on:${bouncycastleVersion}"
+	implementation "org.bouncycastle:bcpkix-jdk18on:${bouncycastleVersion}"
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
