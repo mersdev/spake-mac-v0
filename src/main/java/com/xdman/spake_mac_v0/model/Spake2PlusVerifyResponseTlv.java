@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Setter
-@Slf4j
 public class Spake2PlusVerifyResponseTlv extends TlvBase{
   private byte[] deviceEvidence;   // 16 bytes
 
@@ -49,8 +48,6 @@ public class Spake2PlusVerifyResponseTlv extends TlvBase{
 
 	  BerTlv deviceEvidence = tlvs.find(Tags.DEVICE_EVIDENCE.tag);
 	  setDeviceEvidence(deviceEvidence.getBytesValue());
-
-	  log.debug(deviceEvidence.toString());
 
 	  return this;
 	}
