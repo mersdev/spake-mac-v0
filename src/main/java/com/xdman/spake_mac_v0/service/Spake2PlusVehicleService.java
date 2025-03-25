@@ -1,16 +1,18 @@
 package com.xdman.spake_mac_v0.service;
 
 import com.payneteasy.tlv.HexUtil;
+import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
-import lombok.RequiredArgsConstructor;
+import com.xdman.spake_mac_v0.repository.Spake2PlusVehicleRepo;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -24,7 +26,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 @Service
-public class Spake2PlusService {
+public class Spake2PlusVehicleService {
   private final SecureRandom secureRandom = new SecureRandom();
   private final ECParameterSpec ecParams = ECNamedCurveTable.getParameterSpec("secp256r1"); // NIST P-256
   private final BigInteger n = ecParams.getN(); // Order of base point G
@@ -35,6 +37,9 @@ public class Spake2PlusService {
   private static final int DEFAULT_PARALLELIZATION = 1;  // p
   private static final byte[] DEFAULT_VOD_FW_VERSIONS = new byte[] {0x01, 0x00};  // v1.0
   private static final byte[] DEFAULT_DK_PROTOCOL_VERSIONS = new byte[] {0x01, 0x00};  // v1.0
+
+  @Autowired
+  private Spake2PlusVehicleRepo spake2PlusVehicleRepo;
 
   // Protocol points - Fix the point coordinates
   private static final ECPoint M = validatePoint(
@@ -55,9 +60,10 @@ public class Spake2PlusService {
    * Creates a SPAKE2+ request with all necessary parameters
    * Based on Listing 18-1: Server Password Generation
    */
-  public Spake2PlusRequestCommandTlv createSpake2PlusRequest(String salt) {
+  public Spake2PlusRequestCommandTlv createSpake2PlusRequest(String password, String salt, String requestId) {
 
-	// Store password as bytes
+	// Store password as bytes// Generate Scrypt output (based on Listing 18-1)
+	byte[] pwd = HexUtil.parseHex(password);
 	byte[] cryptographicSalt = HexUtil.parseHex(salt);
 
 	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -69,6 +75,27 @@ public class Spake2PlusService {
 	} catch (IOException e) {
 	  throw new IllegalArgumentException("Failed to combine Scrypt parameters", e);
 	}
+
+	byte[] z = SCrypt.generate(pwd, cryptographicSalt, DEFAULT_SCRYPT_COST, DEFAULT_BLOCK_SIZE, DEFAULT_PARALLELIZATION, 80);
+
+	// Split z into z0 and z1 (40 bytes each)
+	byte[] z0 = Arrays.copyOfRange(z, 0, 40);
+	byte[] z1 = Arrays.copyOfRange(z, 40, 80);
+
+	// Convert to w0 and w1 scalars (mod n-1) + 1
+	BigInteger z0BigInt = new BigInteger(1, z0);
+	BigInteger z1BigInt = new BigInteger(1, z1);
+	BigInteger w0 = z0BigInt.mod(n.subtract(BigInteger.ONE)).add(BigInteger.ONE);;
+	BigInteger w1 = z1BigInt.mod(n.subtract(BigInteger.ONE)).add(BigInteger.ONE);
+
+	Spake2PlusVehicleData configurations = new Spake2PlusVehicleData();
+	configurations.apply(config -> {
+	  config.setW0(w0);
+	  config.setW1(w1);
+	  config.setRequestId(requestId);
+	});
+
+	spake2PlusVehicleRepo.save(configurations);
 
 	// Create the request TLV
 	Spake2PlusRequestCommandTlv request = new Spake2PlusRequestCommandTlv();
@@ -85,53 +112,22 @@ public class Spake2PlusService {
   }
 
   /**
-   * Process SPAKE2+ request and generate response
-   * Based on Listing 18-3: Device-side Public Point Generation
-   */
-  public Spake2PlusRequestResponseTlv processSpake2PlusRequest(Spake2PlusRequestCommandTlv request, String password) {
-
-	// Generate Scrypt output (based on Listing 18-1)
-	byte[] pwd = HexUtil.parseHex(password);
-	byte[] cryptographicSalt = HexUtil.parseHex(request.getCryptographicSalt());
-	byte[] z = SCrypt.generate(pwd, cryptographicSalt, DEFAULT_SCRYPT_COST, DEFAULT_BLOCK_SIZE, DEFAULT_PARALLELIZATION, 80);
-
-	// Split z into z0 and z1 (40 bytes each)
-	byte[] z0 = Arrays.copyOfRange(z, 0, 40);
-	byte[] z1 = Arrays.copyOfRange(z, 40, 80);
-
-	// Convert to w0 and w1 scalars (mod n-1) + 1
-	BigInteger z0BigInt = new BigInteger(1, z0);
-	BigInteger z1BigInt = new BigInteger(1, z1);
-	BigInteger w0 = z0BigInt.mod(n.subtract(BigInteger.ONE)).add(BigInteger.ONE);;
-	BigInteger w1 = z1BigInt.mod(n.subtract(BigInteger.ONE)).add(BigInteger.ONE);
-
-	// Compute L = w1 * G
-	ECPoint L = G.multiply(w1);
-	// Generate random scalar x on chosen curve
-	BigInteger x = new BigInteger(256, secureRandom).mod(n);
-	// Calculate X = x*G + w0*M
-	ECPoint X = G.multiply(x).add(M.multiply(w0));;
-
-	// Create response TLV
-	Spake2PlusRequestResponseTlv response = new Spake2PlusRequestResponseTlv();
-	response.setCurvePointX(X.getEncoded(false)); // Include 0x04 prefix
-
-	// Optional: Select supported version
-	response.setSelectedVodFwVersion(new byte[]{0x01, 0x00});
-	return response;
-  }
-
-  /**
    * Process SPAKE2+ response and generate verify request
    * Based on Listing 18-2: Vehicle-side Public Point Generation
    * and Listing 18-4: Vehicle-side Computation of Shared Secret
    * and Listing 18-6: Derivation of Evidence Keys
    * and Listing 18-7: Vehicle-side Computation of Evidence
    */
-  public Spake2PlusVerifyCommandTlv processSpake2PlusResponse(Spake2PlusRequestResponseTlv response) {
+  public Spake2PlusVerifyCommandTlv processSpake2PlusResponse(Spake2PlusRequestResponseTlv response, String requestId) {
 
+	Spake2PlusVehicleData config = spake2PlusVehicleRepo.findByRequestId(requestId);
+	BigInteger w0 = config.getW0();
+	BigInteger w1 = config.getW1();
 	// Parse X from response
 	ECPoint receivedX = ecParams.getCurve().decodePoint(response.getCurvePointX());
+
+	// Compute L = w1 * G
+	ECPoint L = G.multiply(w1);
 
 	// Generate random scalar y (Vehicle-side)
 	BigInteger y = new BigInteger(256, secureRandom).mod(n);
@@ -146,11 +142,11 @@ public class Spake2PlusService {
 	ECPoint V = L.multiply(y);
 
 	// Calculate K = SHA-256(len(X) || X || len(Y) || Y || len(Z) || Z || len(V) || V || len(w0) || w0)
-	byte[] K = computeK(receivedX, Y, Z, V);
+	byte[] K = computeK(w0, receivedX, Y, Z, V);
 
 	// Split K into CK and SK
-	this.CK = Arrays.copyOfRange(K, 0, 16); // First 128 bits
-	this.SK = Arrays.copyOfRange(K, 16, 32); // Next 128 bits
+	byte[] CK = Arrays.copyOfRange(K, 0, 16); // First 128 bits
+	byte[] SK = Arrays.copyOfRange(K, 16, 32); // Next 128 bits
 
 	// Derive evidence keys K1, K2
 	byte[] evidenceKeys = deriveEvidenceKeys(CK);
@@ -168,68 +164,6 @@ public class Spake2PlusService {
 	return verifyCommand;
   }
 
-  /**
-   * Process SPAKE2+ verify request and generate verify response
-   * Based on Listing 18-5: Device-side Computation of Shared Secret
-   * and Listing 18-6: Derivation of Evidence Keys
-   * and Listing 18-8: Device-side Computation of Evidence
-   * and Listing 18-9: Derivation of System Keys
-   */
-  public Spake2PlusVerifyResponseTlv processSpake2PlusVerifyRequest(Spake2PlusVerifyCommandTlv request) {
-
-	// Parse Y from request
-	ECPoint Y = ecParams.getCurve().decodePoint(request.getCurvePointY());
-
-	// Calculate Z = x*(Y - w0*N)
-	ECPoint Z = Y.subtract(N.multiply(w0)).multiply(x);
-
-	// Calculate V = w1*(Y - w0*N)
-	ECPoint V = Y.subtract(N.multiply(w0)).multiply(w1);
-
-	// Calculate K = SHA-256(len(X) || X || len(Y) || Y || len(Z) || Z || len(V) || V || len(w0) || w0)
-	byte[] K = computeK(X, Y, Z, V);
-
-	// Split K into CK and SK
-	this.CK = Arrays.copyOfRange(K, 0, 16); // First 128 bits
-	this.SK = Arrays.copyOfRange(K, 16, 32); // Next 128 bits
-
-	// Derive evidence keys K1, K2
-	byte[] evidenceKeys = deriveEvidenceKeys(CK);
-	byte[] K1 = Arrays.copyOfRange(evidenceKeys, 0, 16);
-	byte[] K2 = Arrays.copyOfRange(evidenceKeys, 16, 32);
-
-	// Verify vehicle evidence
-	byte[] expectedVehicleEvidence = computeCMAC(K1, Y.getEncoded(false));
-	if (!Arrays.equals(expectedVehicleEvidence, request.getVehicleEvidence())) {
-	  throw new SecurityException("Vehicle evidence verification failed");
-	}
-
-	// Compute device evidence
-	byte[] deviceEvidence = computeCMAC(K2, X.getEncoded(false));
-
-	// Derive system keys
-	boolean supportExtendedKeys = false; // Set based on your requirements
-	byte[] systemKeys = deriveSystemKeys(SK, supportExtendedKeys);
-
-	byte[] Kenc = Arrays.copyOfRange(systemKeys, 0, 16);
-	byte[] Kmac = Arrays.copyOfRange(systemKeys, 16, 32);
-	byte[] Krmac = Arrays.copyOfRange(systemKeys, 32, 48);
-	byte[] longTermSharedSecret = Arrays.copyOfRange(systemKeys, 48, 64);
-
-	// If extended keys are supported, extract them
-	byte[] Kble_intro = null;
-	byte[] Kble_oob_master = null;
-	if (supportExtendedKeys && systemKeys.length >= 80) {
-	  Kble_intro = Arrays.copyOfRange(systemKeys, 64, 80);
-	  Kble_oob_master = Arrays.copyOfRange(systemKeys, 80, 96);
-	}
-
-	// Create verify response TLV
-	Spake2PlusVerifyResponseTlv verifyResponse = new Spake2PlusVerifyResponseTlv();
-	verifyResponse.setDeviceEvidence(deviceEvidence);
-
-	return verifyResponse;
-  }
 
   /**
    * Validates an EC point from its hex representation
@@ -255,7 +189,7 @@ public class Spake2PlusService {
   /**
    * Computes K value based on Listing 18-4/18-5
    */
-  private byte[] computeK(ECPoint X, ECPoint Y, ECPoint Z, ECPoint V) {
+  private byte[] computeK(BigInteger w0, ECPoint X, ECPoint Y, ECPoint Z, ECPoint V) {
 	try {
 	  MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
 
@@ -339,43 +273,6 @@ public class Spake2PlusService {
 	}
   }
 
-  /**
-   * Derives system keys based on Listing 18-9
-   */
-  private byte[] deriveSystemKeys(byte[] SK, boolean extendedKeysSupport) {
-	try {
-	  // HKDF implementation (RFC5869)
-	  // Note: This is a simplified version
-	  MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
-
-	  // Extract
-	  byte[] prk = hmacSha256(null, SK);
-
-	  // Info string preparation
-	  byte[] info = "SystemKeys".getBytes();
-
-	  // Expand
-	  int okmLength = extendedKeysSupport ? 96 : 64; // With or without extended keys
-	  byte[] okm = new byte[okmLength];
-	  byte[] t = new byte[0];
-
-	  for (int i = 1; i <= Math.ceil(okmLength * 1.0 / sha256.getDigestLength()); i++) {
-		byte[] input = new byte[t.length + info.length + 1];
-		System.arraycopy(t, 0, input, 0, t.length);
-		System.arraycopy(info, 0, input, t.length, info.length);
-		input[input.length - 1] = (byte) i;
-
-		t = hmacSha256(prk, input);
-
-		int copyLength = Math.min(t.length, okm.length - (i - 1) * sha256.getDigestLength());
-		System.arraycopy(t, 0, okm, (i - 1) * sha256.getDigestLength(), copyLength);
-	  }
-
-	  return okm;
-	} catch (Exception e) {
-	  throw new RuntimeException("Error deriving system keys", e);
-	}
-  }
 
   /**
    * Computes CMAC for evidence based on Listing 18-7/18-8

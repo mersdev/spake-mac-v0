@@ -1,1 +1,19 @@
-spring.application.name=spake-mac-v0
+spring:
+  application:
+    name: spake2-plus-v0
+  datasource:
+    url: jdbc:h2:mem:mydb
+    username: sa
+    password: password
+    driverClassName: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        trace: true
+        web-allow-others: false
+
+
