@@ -1,13 +1,9 @@
 package com.xdman.spake_mac_v0;
 
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class SpakeMacV0ApplicationTests {
-
-	@Test
-	void contextLoads() {
-	}
-
-}
+@SpringBootTest(
+  webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+  classes = SpakeMacV0Application.class
+)
+public abstract class SpakeMacV0ApplicationTests {}

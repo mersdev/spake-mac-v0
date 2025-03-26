@@ -9,7 +9,7 @@ import lombok.Setter;
 import java.math.BigInteger;
 
 @Entity
-@SequenceGenerator(name = "ID_SEQUENCE", sequenceName = "SPAKE_VEHICLE_SEQ", allocationSize = 1)
+@SequenceGenerator(name = "SPAKE_VEHICLE_SEQ", sequenceName = "SPAKE_VEHICLE_SEQ", allocationSize = 1)
 @Getter
 @Setter
 public class Spake2PlusVehicleData extends AbstractPersistable<Spake2PlusVehicleData> {

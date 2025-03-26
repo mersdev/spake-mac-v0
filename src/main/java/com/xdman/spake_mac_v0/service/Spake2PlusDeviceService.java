@@ -2,13 +2,18 @@ package com.xdman.spake_mac_v0.service;
 
 import com.payneteasy.tlv.HexUtil;
 import com.xdman.spake_mac_v0.domain.Spake2PlusDeviceData;
+import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
+import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
+import com.xdman.spake_mac_v0.model.Spake2PlusResponseWrapper;
 import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusDeviceRepo;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -23,6 +28,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
+@Slf4j
 @Service
 public class Spake2PlusDeviceService {
   private final SecureRandom secureRandom = new SecureRandom();
@@ -30,8 +36,8 @@ public class Spake2PlusDeviceService {
   private final BigInteger n = ecParams.getN(); // Order of base point G
   private final ECPoint G = ecParams.getG(); // Base point
 
-  @Autowired
-  private Spake2PlusDeviceRepo spake2PlusDeviceRepo;
+
+  private final Spake2PlusDeviceRepo spake2PlusDeviceRepo;
 
   public Spake2PlusDeviceService(Spake2PlusDeviceRepo spake2PlusDeviceRepo) {
 	this.spake2PlusDeviceRepo = spake2PlusDeviceRepo;
@@ -56,7 +62,7 @@ public class Spake2PlusDeviceService {
    * Process SPAKE2+ request and generate response
    * Based on Listing 18-3: Device-side Public Point Generation
    */
-  public Spake2PlusRequestResponseTlv processSpake2PlusRequest(Spake2PlusRequestCommandTlv request, String password, String requestId) {
+  public Spake2PlusResponseWrapper processSpake2PlusRequest(Spake2PlusRequestCommandTlv request, String password, String requestId) {
 
 	// Generate Scrypt output (based on Listing 18-1)
 	byte[] pwd = HexUtil.parseHex(password);
@@ -92,6 +98,8 @@ public class Spake2PlusDeviceService {
 	  config.setPassword(password);
 	});
 
+	log.info("w0: {}, w1: {}", w0, w1);
+	log.info("x: {}", x);
 	spake2PlusDeviceRepo.save(configurations);
 
 	// Create response TLV
@@ -100,7 +108,8 @@ public class Spake2PlusDeviceService {
 
 	// Optional: Select supported version
 	response.setSelectedVodFwVersion(new byte[]{0x01, 0x00});
-	return response;
+
+	return new Spake2PlusResponseWrapper(response, configurations);
   }
 
   /**
@@ -110,9 +119,8 @@ public class Spake2PlusDeviceService {
    * and Listing 18-8: Device-side Computation of Evidence
    * and Listing 18-9: Derivation of System Keys
    */
-  public Spake2PlusVerifyResponseTlv processSpake2PlusVerifyRequest(Spake2PlusVerifyCommandTlv request, String requestId) {
+  public Spake2PlusVerifyResponseTlv processSpake2PlusVerifyRequest(Spake2PlusVerifyCommandTlv request, Spake2PlusDeviceData config) {
 
-	Spake2PlusDeviceData config = spake2PlusDeviceRepo.findByRequestId(requestId);
 	BigInteger w0 = config.getW0();
 	BigInteger w1 = config.getW1();
 	BigInteger x = config.getX();
@@ -143,8 +151,15 @@ public class Spake2PlusDeviceService {
 
 	// Verify vehicle evidence
 	byte[] expectedVehicleEvidence = computeCMAC(K1, Y.getEncoded(false));
-	if (!Arrays.equals(expectedVehicleEvidence, request.getVehicleEvidence())) {
-	  throw new SecurityException("Vehicle evidence verification failed");
+	byte[] actualVehicleEvidence = request.getVehicleEvidence();
+	
+	log.info("Expected vehicle evidence: {}", HexUtil.toHexString(expectedVehicleEvidence));
+	log.info("Actual vehicle evidence: {}", HexUtil.toHexString(actualVehicleEvidence));
+	log.info("K1: {}", HexUtil.toHexString(K1));
+	log.info("Y encoded: {}", HexUtil.toHexString(Y.getEncoded(false)));
+	
+	if (!Arrays.equals(expectedVehicleEvidence, actualVehicleEvidence)) {
+	    throw new SecurityException("Vehicle evidence verification failed");
 	}
 
 	// Compute device evidence
@@ -326,7 +341,7 @@ public class Spake2PlusDeviceService {
   private byte[] computeCMAC(byte[] key, byte[] data) {
 	try {
 	  // CMAC-AES-128 as defined in RFC4493
-	  Mac mac = Mac.getInstance("AESCMAC");
+	  Mac mac = Mac.getInstance("AESCMAC", new BouncyCastleProvider());
 	  SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
 	  mac.init(keySpec);
 	  return mac.doFinal(data);

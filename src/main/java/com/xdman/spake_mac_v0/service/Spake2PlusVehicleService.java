@@ -4,11 +4,14 @@ import com.payneteasy.tlv.HexUtil;
 import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
+import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
 import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusVehicleRepo;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -26,6 +29,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 @Service
+@Slf4j
 public class Spake2PlusVehicleService {
   private final SecureRandom secureRandom = new SecureRandom();
   private final ECParameterSpec ecParams = ECNamedCurveTable.getParameterSpec("secp256r1"); // NIST P-256
@@ -60,7 +64,7 @@ public class Spake2PlusVehicleService {
    * Creates a SPAKE2+ request with all necessary parameters
    * Based on Listing 18-1: Server Password Generation
    */
-  public Spake2PlusRequestCommandTlv createSpake2PlusRequest(String password, String salt, String requestId) {
+  public Spake2PlusRequestWrapper createSpake2PlusRequest(String password, String salt, String requestId) {
 
 	// Store password as bytes// Generate Scrypt output (based on Listing 18-1)
 	byte[] pwd = HexUtil.parseHex(password);
@@ -108,7 +112,8 @@ public class Spake2PlusVehicleService {
 	request.setDkProtocolVersions(DEFAULT_DK_PROTOCOL_VERSIONS); // Example version
 	request.setBtVersions(new byte[]{0x05, 0x00}); // Example version
 	request.setVehicleBrand(HexUtil.toHexString(new byte[]{0x00, 0x03})); // Example brand code
-	return request;
+
+	return new Spake2PlusRequestWrapper(request, configurations);
   }
 
   /**
@@ -118,13 +123,14 @@ public class Spake2PlusVehicleService {
    * and Listing 18-6: Derivation of Evidence Keys
    * and Listing 18-7: Vehicle-side Computation of Evidence
    */
-  public Spake2PlusVerifyCommandTlv processSpake2PlusResponse(Spake2PlusRequestResponseTlv response, String requestId) {
+  public Spake2PlusVerifyCommandTlv processSpake2PlusResponse(Spake2PlusRequestResponseTlv response, Spake2PlusVehicleData config) {
 
-	Spake2PlusVehicleData config = spake2PlusVehicleRepo.findByRequestId(requestId);
 	BigInteger w0 = config.getW0();
 	BigInteger w1 = config.getW1();
 	// Parse X from response
 	ECPoint receivedX = ecParams.getCurve().decodePoint(response.getCurvePointX());
+
+	log.info("w0: {}, w1: {}", w0, w1);
 
 	// Compute L = w1 * G
 	ECPoint L = G.multiply(w1);
@@ -280,7 +286,7 @@ public class Spake2PlusVehicleService {
   private byte[] computeCMAC(byte[] key, byte[] data) {
 	try {
 	  // CMAC-AES-128 as defined in RFC4493
-	  Mac mac = Mac.getInstance("AESCMAC");
+	  Mac mac = Mac.getInstance("AESCMAC", new BouncyCastleProvider());
 	  SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
 	  mac.init(keySpec);
 	  return mac.doFinal(data);

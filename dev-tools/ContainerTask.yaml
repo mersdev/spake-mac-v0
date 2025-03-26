@@ -1,0 +1,71 @@
+# github.com/go-task/task
+
+version: '3'
+
+vars:
+  DB_IMAGE: "postgres"
+  DB_IMAGE_VERSION: "13.4-alpine"
+  DB_CONTAINER_NAME: "postgres-spake"
+  DB_VOLUME_NAME: "spake-vol"
+  DB_NETWORK: "spake-net"
+  DB_ADMIN_USER: "xdman"
+  DB_ADMIN_PASS: "123456"
+  DB_DATABASE_NAME: "db"
+
+tasks:
+  setupAll:
+    desc: |-
+      Pull official PostgreSQL image, setup and run single node within a container locally.
+    cmds:
+      - podman pull {{.DB_IMAGE}}:{{.DB_IMAGE_VERSION}}
+      - task: setupNetwork
+      - |-
+        podman run -d --name={{.DB_CONTAINER_NAME}} --hostname={{.DB_CONTAINER_NAME}} \
+          -e POSTGRES_USER={{.DB_ADMIN_USER}} -e POSTGRES_PASSWORD={{.DB_ADMIN_PASS}} \
+          -e POSTGRES_DB={{.DB_DATABASE_NAME}} \
+          --net={{.DB_NETWORK}} -p 5434:5432 \
+          -v {{.DB_VOLUME_NAME}}:/var/lib/postgresql/data \
+          {{.DB_IMAGE}}:{{.DB_IMAGE_VERSION}}
+      - podman ps -f name={{.DB_CONTAINER_NAME}}
+      - cmd: echo 'Connect to PostgreSQL database under localhost:5432 with user {{.DB_USER}}'
+        silent: true
+      - cmd: echo 'Do not forget to call "task db:createDatabase" in the respective modules to create the application databases'
+        silent: true
+    status:
+      - test `podman container ls -aqf "name={{.DB_CONTAINER_NAME}}" | wc -l` == 1
+  setupNetwork:
+    desc: |-
+      Setup bridge network for PostgreSQL
+    cmds:
+      - podman network create -d bridge {{.DB_NETWORK}}
+    status:
+      - test `podman network ls -qf "name={{.DB_NETWORK}}" | wc -l` == 1
+  resetContainer:
+    desc: |-
+      Remove the PostgreSQL container.
+    cmds:
+      - podman stop {{.DB_CONTAINER_NAME}}
+      - podman rm {{.DB_CONTAINER_NAME}}
+  removeFromPodman:
+    desc: |-
+      Remove the PostgreSQL Image & Network.
+    cmds:
+      - task: resetContainer
+      - podman rmi {{.DB_IMAGE}}:{{.DB_IMAGE_VERSION}}
+      - podman network rm {{.DB_NETWORK}}
+      - task: clearData
+  clearData:
+    desc: |-
+      Remove the saved data.
+    cmds:
+      - podman volume rm {{.DB_VOLUME_NAME}}
+  restartContainer:
+    desc: |-
+      Restart the existing PostgreSQL container.
+    cmds:
+      - podman restart {{.DB_CONTAINER_NAME}}
+  stopContainer:
+    desc: |-
+      Stop the running PostgreSQL container.
+    cmds:
+      - podman stop {{.DB_CONTAINER_NAME}}

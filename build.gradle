@@ -32,7 +32,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation "com.payneteasy:ber-tlv:${berTlvVersion}"
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'org.postgresql:postgresql'
 
 	// Bouncy Castle dependencies
 	implementation "org.bouncycastle:bcprov-jdk18on:${bouncycastleVersion}"
@@ -45,4 +45,12 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.bootRun {
+	args("--spring.profiles.active=local")
+}
+
+test {
+	systemProperty 'spring.profiles.active', 'test'
 }
