@@ -1,8 +1,5 @@
 package com.xdman.spake_mac_v0.service;
 
-import com.payneteasy.tlv.HexUtil;
-import com.xdman.spake_mac_v0.domain.Spake2PlusDeviceData;
-import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
@@ -11,15 +8,14 @@ import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusDeviceRepo;
 import com.xdman.spake_mac_v0.repository.Spake2PlusVehicleRepo;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigInteger;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,10 +40,8 @@ class Spake2PlusIntegrationTest {
     private static final String TEST_SALT = "000102030405060708090A0B0C0D0E0F";
     private static final String TEST_REQUEST_ID = "test-request-id";
 
-    @BeforeEach
-    void setUp() {
+    private Logger log = Logger.getLogger(Spake2PlusIntegrationTest.class.getName());
 
-    }
 
     @Test
     @DisplayName("Full SPAKE2+ Protocol Flow Integration Test")
@@ -77,7 +71,6 @@ class Spake2PlusIntegrationTest {
         Spake2PlusVerifyCommandTlv verifyRequest = vehicleService.processSpake2PlusResponse(
             deviceResponse, vehicleWrapper.data());
 
-        assertNotNull(verifyRequest.encode(), "1234");
         assertNotNull(verifyRequest, "Verify request should not be null");
         assertNotNull(verifyRequest.getCurvePointY(), "Curve point Y should not be null");
         assertEquals(65, verifyRequest.getCurvePointY().length, "Curve point Y should be 65 bytes");
@@ -89,6 +82,10 @@ class Spake2PlusIntegrationTest {
         Spake2PlusVerifyResponseTlv verifyResponse = deviceService.processSpake2PlusVerifyRequest(
             verifyRequest, deviceWrapper.data());
 
+        System.out.println("w0: "+ deviceWrapper.data().getW0());
+        System.out.println("w1: "+ deviceWrapper.data().getW1());
+        System.out.println("x: "+ deviceWrapper.data().getX());
+        System.out.println("Ex" + verifyRequest.encode());
         assertNotNull(verifyResponse, "Verify response should not be null");
         assertNotNull(verifyResponse.getDeviceEvidence(), "Device evidence should not be null");
         assertEquals(16, verifyResponse.getDeviceEvidence().length, "Device evidence should be 16 bytes");
