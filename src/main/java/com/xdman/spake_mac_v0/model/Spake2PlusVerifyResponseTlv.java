@@ -8,8 +8,6 @@ import com.payneteasy.tlv.BerTlvs;
 import com.payneteasy.tlv.HexUtil;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -23,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Setter
-@Slf4j
 public class Spake2PlusVerifyResponseTlv extends TlvBase{
   private byte[] deviceEvidence;   // 16 bytes
 
@@ -51,8 +48,6 @@ public class Spake2PlusVerifyResponseTlv extends TlvBase{
 
 	  BerTlv deviceEvidence = tlvs.find(Tags.DEVICE_EVIDENCE.tag);
 	  setDeviceEvidence(deviceEvidence.getBytesValue());
-
-	  log.debug(deviceEvidence.toString());
 
 	  return this;
 	}

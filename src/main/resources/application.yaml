@@ -1,1 +1,19 @@
-spring.application.name=spake-mac-v0
+spring:
+  application:
+    name: spake2-plus-v0
+  datasource:
+    url: jdbc:postgresql://localhost:5434/db
+    username: xdman
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+
+
+
