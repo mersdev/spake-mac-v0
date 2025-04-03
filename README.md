@@ -1,49 +1,61 @@
-# SPAKE2+ Protocol Implementation
+# Secure Payload Encryption System
 
-This Spring Boot application implements the SPAKE2+ protocol for secure device-to-vehicle authentication. The implementation provides a robust framework for establishing secure communication channels between devices and vehicles using the SPAKE2+ password-authenticated key exchange protocol.
+This Spring Boot application implements a robust secure payload encryption system with MAC chaining for secure communication. The implementation provides a comprehensive framework for encrypting and decrypting payloads with message authentication and sequential message integrity.
 
 ## Overview
 
-The SPAKE2+ protocol is a password-authenticated key exchange protocol that allows two parties to establish a shared secret key based on a low-entropy password, without exposing the password to offline dictionary attacks. This implementation is specifically designed for secure authentication between devices and vehicles.
+The system implements secure payload encryption using AES with the BouncyCastle provider, featuring MAC (Message Authentication Code) chaining for sequential message integrity. It supports both request and response payload handling with separate encryption services and comprehensive security measures.
 
 ## Technical Stack
 
-- Spring Boot 3.4.4
+- Spring Boot
 - Java
 - Gradle
+- BouncyCastle Provider for Cryptographic Operations
 
 ## Key Components
 
 ### Core Services
 
-1. **Spake2PlusService**
-   - Core implementation of the SPAKE2+ protocol
-   - Handles the cryptographic operations and protocol flow
+1. **PayloadEncryptionService**
+   - Handles encryption of request payloads
+   - Implements AES encryption with MAC generation
+   - Supports MAC chaining for sequential messages
 
-2. **Spake2PlusDeviceService**
-   - Manages device-side protocol operations
-   - Handles SPAKE2+ request processing
-   - Implements device-specific security measures
+2. **PayloadDecryptionService**
+   - Manages decryption of encrypted payloads
+   - Validates MAC before decryption
+   - Handles MAC chaining verification
 
-3. **Spake2PlusVehicleService**
-   - Manages vehicle-side protocol operations
-   - Creates and processes SPAKE2+ requests
-   - Implements vehicle-specific security features
+3. **PayloadResponseEncryptionService**
+   - Specialized service for response payload encryption
+   - Implements response-specific security measures
+   - Supports response MAC chaining
 
 ## Features
 
-- Full SPAKE2+ protocol implementation
-- Secure key exchange between devices and vehicles
-- Request/Response handling for both device and vehicle endpoints
-- Robust error handling for invalid curve points and other security concerns
-- Integration tests covering the complete protocol flow
+- AES encryption for payload security
+- MAC generation and validation
+- MAC chaining for sequential message integrity
+- Support for both request and response payloads
+- Comprehensive error handling and input validation
+- Padding management for variable-length payloads
+
+## Security Features
+
+- 16-byte encryption keys (KENC) for AES operations
+- 16-byte MAC keys (KMAC/KRMAC) for message authentication
+- MAC chaining for sequential message integrity
+- Padding validation and management
+- Comprehensive input validation
+- Protection against various cryptographic attacks
 
 ## Getting Started
 
 ### Prerequisites
 
 - Java 17 or higher
-- Gradle 8.13 or higher
+- Gradle
 
 ### Building the Project
 
@@ -61,9 +73,18 @@ The SPAKE2+ protocol is a password-authenticated key exchange protocol that allo
 
 The application includes comprehensive test coverage:
 
-- Unit tests for both device and vehicle services
-- Integration tests for full protocol flow
+- Unit tests for encryption and decryption services
+- Integration tests for full encryption/decryption cycles
+- Edge case testing for various payload sizes
 - Security validation tests
+- MAC chaining verification tests
+
+Test scenarios include:
+- Text and binary payload handling
+- MAC chaining across multiple messages
+- Block size edge cases
+- Invalid input handling
+- Empty and null payload cases
 
 Run tests using:
 
@@ -71,20 +92,12 @@ Run tests using:
 ./gradlew test
 ```
 
-## API Documentation
-
-The application exposes RESTful endpoints for SPAKE2+ protocol operations. Detailed API documentation is available through Spring Web.
-
-### Reference Documentation
-
-- [Spring Boot Documentation](https://docs.spring.io/spring-boot/3.4.4/reference/web/servlet.html)
-- [Building REST services with Spring](https://spring.io/guides/tutorials/rest/)
-
 ## Security Considerations
 
-- Implements secure password-authenticated key exchange
-- Protects against offline dictionary attacks
-- Validates curve points to prevent invalid curve attacks
+- Implements secure AES encryption
+- Ensures message integrity through MAC validation
+- Maintains sequential message integrity via MAC chaining
+- Validates all cryptographic parameters
 - Implements proper error handling for security-related issues
 
 ## Contributing
