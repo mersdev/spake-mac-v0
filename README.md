@@ -1,10 +1,22 @@
-# Secure Payload Encryption System
+# Secure Payload Encryption System with SPAKE2+ Protocol
 
-This Spring Boot application implements a robust secure payload encryption system with MAC chaining for secure communication. The implementation provides a comprehensive framework for encrypting and decrypting payloads with message authentication and sequential message integrity.
+This Spring Boot application implements a comprehensive secure communication system featuring SPAKE2+ protocol integration and secure payload encryption with MAC chaining. The system provides a robust framework for authenticated key exchange and secure message transmission between devices and vehicles.
 
 ## Overview
 
-The system implements secure payload encryption using AES with the BouncyCastle provider, featuring MAC (Message Authentication Code) chaining for sequential message integrity. It supports both request and response payload handling with separate encryption services and comprehensive security measures.
+The system consists of two main components:
+
+1. **SPAKE2+ Protocol Implementation**
+   - Secure Password-Based Authenticated Key Exchange
+   - Device and Vehicle authentication
+   - Cryptographic salt and key derivation
+   - Evidence-based verification
+
+2. **Secure Payload System**
+   - AES encryption with BouncyCastle provider
+   - MAC (Message Authentication Code) chaining
+   - Request/Response payload handling
+   - Sequential message integrity
 
 ## Technical Stack
 
@@ -15,40 +27,61 @@ The system implements secure payload encryption using AES with the BouncyCastle 
 
 ## Key Components
 
-### Core Services
+### SPAKE2+ Protocol Services
+
+1. **Spake2PlusDeviceService**
+   - Implements device-side SPAKE2+ protocol
+   - Handles password-based key generation
+   - Processes authentication requests and responses
+   - Generates and verifies cryptographic evidence
+
+2. **Spake2PlusVehicleService**
+   - Implements vehicle-side SPAKE2+ protocol
+   - Manages authentication challenges
+   - Handles key exchange and verification
+   - Processes device responses
+
+### Secure Payload Services
 
 1. **PayloadEncryptionService**
-   - Handles encryption of request payloads
-   - Implements AES encryption with MAC generation
-   - Supports MAC chaining for sequential messages
+   - Request payload encryption
+   - MAC generation and chaining
+   - AES-CBC encryption
+   - ISO/IEC 9797-1 padding
 
 2. **PayloadDecryptionService**
-   - Manages decryption of encrypted payloads
-   - Validates MAC before decryption
-   - Handles MAC chaining verification
+   - Secure payload decryption
+   - MAC verification
+   - Padding validation
+   - Chain integrity verification
 
 3. **PayloadResponseEncryptionService**
-   - Specialized service for response payload encryption
-   - Implements response-specific security measures
-   - Supports response MAC chaining
+   - Response-specific encryption
+   - Specialized MAC handling
+   - Response counter management
 
-## Features
-
-- AES encryption for payload security
-- MAC generation and validation
-- MAC chaining for sequential message integrity
-- Support for both request and response payloads
-- Comprehensive error handling and input validation
-- Padding management for variable-length payloads
+4. **PayloadResponseDecryptionService**
+   - Response payload decryption
+   - Response MAC verification
+   - Response chain validation
 
 ## Security Features
 
-- 16-byte encryption keys (KENC) for AES operations
-- 16-byte MAC keys (KMAC/KRMAC) for message authentication
-- MAC chaining for sequential message integrity
-- Padding validation and management
-- Comprehensive input validation
-- Protection against various cryptographic attacks
+### SPAKE2+ Protocol Security
+
+- Elliptic Curve Cryptography (NIST P-256)
+- Password-based authentication
+- Secure key derivation (SCrypt)
+- Cryptographic evidence exchange
+- Protection against man-in-the-middle attacks
+
+### Payload Security
+
+- AES-CBC encryption (16-byte keys)
+- CMAC-AES-128 for message authentication
+- MAC chaining for sequential integrity
+- Secure padding management
+- Input validation and sanitization
 
 ## Getting Started
 
@@ -73,18 +106,18 @@ The system implements secure payload encryption using AES with the BouncyCastle 
 
 The application includes comprehensive test coverage:
 
-- Unit tests for encryption and decryption services
-- Integration tests for full encryption/decryption cycles
-- Edge case testing for various payload sizes
-- Security validation tests
-- MAC chaining verification tests
+### SPAKE2+ Protocol Tests
+- Full protocol flow integration tests
+- Device and vehicle authentication tests
+- Evidence verification tests
+- Key derivation tests
 
-Test scenarios include:
-- Text and binary payload handling
-- MAC chaining across multiple messages
+### Payload System Tests
+- Encryption/decryption cycle tests
+- MAC chaining verification
+- Binary and text payload handling
 - Block size edge cases
 - Invalid input handling
-- Empty and null payload cases
 
 Run tests using:
 
@@ -92,18 +125,54 @@ Run tests using:
 ./gradlew test
 ```
 
+## Technical Specifications
+
+### SPAKE2+ Protocol
+- Curve: NIST P-256 (secp256r1)
+- Key Size: 256-bit
+- Hash Function: SHA-256
+- MAC Algorithm: CMAC-AES-128
+- KDF: HKDF with SHA-256
+
+### Protocol Implementation Listings
+
+1. **Password Generation and Processing**
+   - Listing 18-1: Server Password Generation and Scrypt Output
+   - Processes password and cryptographic salt
+   - Generates Scrypt output (z) split into z0 and z1
+
+2. **Public Point Generation**
+   - Listing 18-2: Vehicle-side Public Point Generation
+   - Listing 18-3: Device-side Public Point Generation
+   - Generates random scalars and computes public points
+   - Implements point multiplication and addition operations
+
+3. **Shared Secret Computation**
+   - Listing 18-4: Vehicle-side Computation
+   - Listing 18-5: Device-side Computation
+   - Calculates shared secret Z and V values
+   - Derives confirmation key (CK) and session key (SK)
+
+4. **Key Derivation and Evidence**
+   - Listing 18-6: Derivation of Evidence Keys (K1, K2)
+   - Listing 18-7: Vehicle-side Evidence Computation
+   - Listing 18-8: Device-side Evidence Computation
+   - Listing 18-9: Derivation of System Keys
+   - Implements HKDF for key derivation
+   - Generates and verifies cryptographic evidence
+
+### Payload Encryption
+- Encryption: AES-CBC
+- Key Size: 128-bit
+- MAC: CMAC-AES-128 (8-byte output)
+- Padding: ISO/IEC 9797-1 method 2
+- Counter Range: 1-255
+
 ## Security Considerations
 
-- Implements secure AES encryption
-- Ensures message integrity through MAC validation
-- Maintains sequential message integrity via MAC chaining
+- Implements secure key exchange protocol
+- Ensures message integrity and authenticity
+- Maintains sequential message integrity
+- Protects against replay attacks
 - Validates all cryptographic parameters
-- Implements proper error handling for security-related issues
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Implements proper error handling 
