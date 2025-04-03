@@ -1,6 +1,7 @@
 package com.xdman.spake_mac_v0.service;
 
 import com.payneteasy.tlv.HexUtil;
+import com.xdman.spake_mac_v0.SpakeMacV0ApplicationTests;
 import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
@@ -11,19 +12,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-public class Spake2PlusVehicleServiceTest {
+public class Spake2PlusVehicleServiceTest extends SpakeMacV0ApplicationTests {
     private static final String TEST_PASSWORD = "123456";
     private static final String TEST_SALT = "A5A5A5A5";
     private static final String TEST_REQUEST_ID = "5678";
