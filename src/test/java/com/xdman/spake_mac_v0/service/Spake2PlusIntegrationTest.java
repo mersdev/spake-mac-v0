@@ -1,5 +1,6 @@
 package com.xdman.spake_mac_v0.service;
 
+import com.xdman.spake_mac_v0.SpakeMacV0ApplicationTests;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
@@ -21,8 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-class Spake2PlusIntegrationTest {
+class Spake2PlusIntegrationTest extends SpakeMacV0ApplicationTests {
 
     @Autowired
     private Spake2PlusVehicleService vehicleService;

@@ -1,6 +1,7 @@
 package com.xdman.spake_mac_v0.service;
 
 import com.payneteasy.tlv.HexUtil;
+import com.xdman.spake_mac_v0.SpakeMacV0ApplicationTests;
 import com.xdman.spake_mac_v0.domain.Spake2PlusDeviceData;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
@@ -23,8 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-public class Spake2PlusDeviceServiceTest {
+public class Spake2PlusDeviceServiceTest extends SpakeMacV0ApplicationTests {
     private static final String REQUEST_COMMAND_TLV = "803000002F5B0201005C0201007F5020C010D96A3B251CAD2B49962B7E096EE8656AC10400001000C2020008C3020001D602000300";
     private static final String VERIFY_COMMAND_TLV = "80320000555241045555A715DFA707AB7C04C0F30CA36CAF25C18439C8396FD5234387DC0082C0D0983F91B81796DD0D3EF683B1538934C8BAE5686010186D7645BCDFD6D6B2821657107846D9709130FB6C57569AF87C534BCF00";
     private static final String TEST_PASSWORD = "123456";
