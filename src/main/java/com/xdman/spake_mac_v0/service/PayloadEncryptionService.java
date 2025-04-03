@@ -6,9 +6,12 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
@@ -36,7 +39,7 @@ public class PayloadEncryptionService {
      * @return SecurePayload containing encrypted data and MAC
      */
     public SecurePayload encryptPayload(byte[] payload, byte[] Kenc, byte[] Kmac, byte counter, byte[] previousMacChaining)
-	  throws NoSuchAlgorithmException, javax.crypto.NoSuchPaddingException, java.security.InvalidKeyException, javax.crypto.IllegalBlockSizeException, javax.crypto.BadPaddingException, java.security.InvalidAlgorithmParameterException, NoSuchProviderException {
+	  throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, javax.crypto.BadPaddingException, java.security.InvalidAlgorithmParameterException, NoSuchProviderException {
         // Validate inputs
         if (counter < 1) {
             throw new IllegalArgumentException("Counter must be between 1 and 255");
