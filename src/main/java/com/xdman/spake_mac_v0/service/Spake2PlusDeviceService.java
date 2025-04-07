@@ -2,14 +2,13 @@ package com.xdman.spake_mac_v0.service;
 
 import com.payneteasy.tlv.HexUtil;
 import com.xdman.spake_mac_v0.domain.Spake2PlusDeviceData;
-import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusResponseWrapper;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyResponseTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusDeviceRepo;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -17,8 +16,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -58,11 +59,18 @@ public class Spake2PlusDeviceService {
 	"N"
   );
 
+  public Spake2PlusResponseWrapper processSpake2PlusRequest(Spake2PlusRequestCommandTlv spake2PlusRequestCommandTlv, String password) {
+	HttpServletRequest requestHeader = Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+	  .map(attributes -> ((ServletRequestAttributes) attributes).getRequest())
+	  .orElseThrow(() -> new IllegalStateException("No active HTTP request context"));
+	return validateSpake2PlusRequest(spake2PlusRequestCommandTlv,password, requestHeader.getRequestId());
+  }
+
   /**
    * Process SPAKE2+ request and generate response
    * Based on Listing 18-3: Device-side Public Point Generation
    */
-  public Spake2PlusResponseWrapper processSpake2PlusRequest(Spake2PlusRequestCommandTlv request, String password, String requestId) {
+  public Spake2PlusResponseWrapper validateSpake2PlusRequest(Spake2PlusRequestCommandTlv request, String password, String requestId) {
 
 	// Generate Scrypt output (based on Listing 18-1)
 	byte[] pwd = HexUtil.parseHex(password);
@@ -112,6 +120,14 @@ public class Spake2PlusDeviceService {
 	return new Spake2PlusResponseWrapper(response, configurations);
   }
 
+  public Spake2PlusVerifyResponseTlv processSpake2PlusVerifyRequest(Spake2PlusVerifyCommandTlv request) {
+	HttpServletRequest requestHeader = Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+	  .map(attributes -> ((ServletRequestAttributes) attributes).getRequest())
+	  .orElseThrow(() -> new IllegalStateException("No active HTTP request context"));
+	Spake2PlusDeviceData config = spake2PlusDeviceRepo.findByRequestId(requestHeader.getRequestId());
+	return validateSpake2PlusVerifyRequest(request, config);
+  }
+
   /**
    * Process SPAKE2+ verify request and generate verify response
    * Based on Listing 18-5: Device-side Computation of Shared Secret
@@ -119,7 +135,7 @@ public class Spake2PlusDeviceService {
    * and Listing 18-8: Device-side Computation of Evidence
    * and Listing 18-9: Derivation of System Keys
    */
-  public Spake2PlusVerifyResponseTlv processSpake2PlusVerifyRequest(Spake2PlusVerifyCommandTlv request, Spake2PlusDeviceData config) {
+  public Spake2PlusVerifyResponseTlv validateSpake2PlusVerifyRequest(Spake2PlusVerifyCommandTlv request, Spake2PlusDeviceData config) {
 
 	BigInteger w0 = config.getW0();
 	BigInteger w1 = config.getW1();

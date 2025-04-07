@@ -2,12 +2,13 @@ package com.xdman.spake_mac_v0.service;
 
 import com.payneteasy.tlv.HexUtil;
 import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyResponseTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusVehicleRepo;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -17,6 +18,8 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -27,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -59,6 +63,13 @@ public class Spake2PlusVehicleService {
 	  "07D60AA6BFADE45008A636337F5168C64D9BD36034808CD564490B1E656EDBE7",
 	"N"
   );
+
+  public Spake2PlusRequestWrapper generateSpake2PlusRequest(String password, String salt) {
+	HttpServletRequest requestHeader = Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+	  .map(attributes -> ((ServletRequestAttributes) attributes).getRequest())
+	  .orElseThrow(() -> new IllegalStateException("No active HTTP request context"));
+	return createSpake2PlusRequest(password,salt,requestHeader.getRequestId());
+  }
 
   /**
    * Creates a SPAKE2+ request with all necessary parameters
@@ -116,6 +127,15 @@ public class Spake2PlusVehicleService {
 	return new Spake2PlusRequestWrapper(request, configurations);
   }
 
+  public Spake2PlusVerifyCommandTlv createSpake2PlusVerifyResponse(Spake2PlusRequestResponseTlv request) {
+	HttpServletRequest requestHeader = Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+	  .map(attributes -> ((ServletRequestAttributes) attributes).getRequest())
+	  .orElseThrow(() -> new IllegalStateException("No active HTTP request context"));
+	Spake2PlusVehicleData configurations = spake2PlusVehicleRepo.findByRequestId(requestHeader.getRequestId());
+	return validateSpake2PlusResponse(request, configurations);
+  }
+
+
   /**
    * Process SPAKE2+ response and generate verify request
    * Based on Listing 18-2: Vehicle-side Public Point Generation
@@ -123,12 +143,12 @@ public class Spake2PlusVehicleService {
    * and Listing 18-6: Derivation of Evidence Keys
    * and Listing 18-7: Vehicle-side Computation of Evidence
    */
-  public Spake2PlusVerifyCommandTlv processSpake2PlusResponse(Spake2PlusRequestResponseTlv response, Spake2PlusVehicleData config) {
+  public Spake2PlusVerifyCommandTlv validateSpake2PlusResponse(Spake2PlusRequestResponseTlv request, Spake2PlusVehicleData config) {
 
 	BigInteger w0 = config.getW0();
 	BigInteger w1 = config.getW1();
 	// Parse X from response
-	ECPoint receivedX = ecParams.getCurve().decodePoint(response.getCurvePointX());
+	ECPoint receivedX = ecParams.getCurve().decodePoint(request.getCurvePointX());
 
 	log.info("w0: {}, w1: {}", w0, w1);
 

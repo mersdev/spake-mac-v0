@@ -3,10 +3,10 @@ package com.xdman.spake_mac_v0.service;
 import com.payneteasy.tlv.HexUtil;
 import com.xdman.spake_mac_v0.SpakeMacV0ApplicationTests;
 import com.xdman.spake_mac_v0.domain.Spake2PlusVehicleData;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyCommandTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusVehicleRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,7 +72,7 @@ public class Spake2PlusVehicleServiceTest extends SpakeMacV0ApplicationTests {
         Spake2PlusRequestWrapper wrapper = spake2PlusVehicleService.createSpake2PlusRequest(
           TEST_PASSWORD, TEST_SALT, TEST_REQUEST_ID
         );
-        Spake2PlusVerifyCommandTlv verifyCommand = spake2PlusVehicleService.processSpake2PlusResponse(
+        Spake2PlusVerifyCommandTlv verifyCommand = spake2PlusVehicleService.validateSpake2PlusResponse(
             response, wrapper.data()
         );
 
@@ -94,7 +94,7 @@ public class Spake2PlusVehicleServiceTest extends SpakeMacV0ApplicationTests {
         response.setCurvePointX(new byte[32]); // Invalid curve point
 
         assertThrows(IllegalArgumentException.class, () ->
-            spake2PlusVehicleService.processSpake2PlusResponse(response, wrapper.data())
+            spake2PlusVehicleService.validateSpake2PlusResponse(response, wrapper.data())
         );
     }
 }

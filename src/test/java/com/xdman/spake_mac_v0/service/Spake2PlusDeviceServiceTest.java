@@ -1,24 +1,20 @@
 package com.xdman.spake_mac_v0.service;
 
-import com.payneteasy.tlv.HexUtil;
 import com.xdman.spake_mac_v0.SpakeMacV0ApplicationTests;
 import com.xdman.spake_mac_v0.domain.Spake2PlusDeviceData;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusResponseWrapper;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyResponseTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusDeviceRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,7 +51,7 @@ public class Spake2PlusDeviceServiceTest extends SpakeMacV0ApplicationTests {
     @DisplayName("Process SPAKE2+ Request Successfully")
     void processSpake2PlusRequest_Success() {
         Spake2PlusRequestCommandTlv request = new Spake2PlusRequestCommandTlv().decode(REQUEST_COMMAND_TLV);
-        Spake2PlusResponseWrapper wrapper = spake2PlusDeviceService.processSpake2PlusRequest(request, TEST_PASSWORD, TEST_REQUEST_ID);
+        Spake2PlusResponseWrapper wrapper = spake2PlusDeviceService.validateSpake2PlusRequest(request, TEST_PASSWORD, TEST_REQUEST_ID);
         Spake2PlusRequestResponseTlv response = wrapper.request();
 
         assertNotNull(response);
@@ -69,25 +65,12 @@ public class Spake2PlusDeviceServiceTest extends SpakeMacV0ApplicationTests {
     @DisplayName("Process SPAKE2+ Verify Request Successfully")
     void processSpake2PlusVerifyRequest_Success() {
         Spake2PlusVerifyCommandTlv verifyCommandTlv = new Spake2PlusVerifyCommandTlv().decode(VERIFY_COMMAND_TLV);
-        Spake2PlusVerifyResponseTlv response = spake2PlusDeviceService.processSpake2PlusVerifyRequest(verifyCommandTlv, mockDeviceData);
+        Spake2PlusVerifyResponseTlv response = spake2PlusDeviceService.validateSpake2PlusVerifyRequest(verifyCommandTlv, mockDeviceData);
 
         assertNotNull(response);
         assertNotNull(response.getDeviceEvidence());
         assertEquals(16, response.getDeviceEvidence().length);
     }
-
-//    @Test
-//    @DisplayName("Process SPAKE2+ Verify Request with Invalid Vehicle Evidence")
-//    void processSpake2PlusVerifyRequest_InvalidEvidence() {
-//        Spake2PlusRequestCommandTlv request = new Spake2PlusRequestCommandTlv().decode(REQUEST_COMMAND_TLV);
-//        Spake2PlusResponseWrapper wrapper = spake2PlusDeviceService.processSpake2PlusRequest(request, TEST_PASSWORD, TEST_REQUEST_ID);
-//        Spake2PlusVerifyCommandTlv verifyCommandTlv = new Spake2PlusVerifyCommandTlv().decode(VERIFY_COMMAND_TLV);
-//        verifyCommandTlv.setVehicleEvidence(new byte[16]); // Invalid evidence
-//
-//        assertThrows(SecurityException.class, () ->
-//            spake2PlusDeviceService.processSpake2PlusVerifyRequest(verifyCommandTlv, wrapper.data())
-//        );
-//    }
 
     @Test
     @DisplayName("Process SPAKE2+ Request with Invalid Parameters")
@@ -96,7 +79,7 @@ public class Spake2PlusDeviceServiceTest extends SpakeMacV0ApplicationTests {
         request.setScryptCost(0); // Invalid Scrypt cost
 
         assertThrows(IllegalArgumentException.class, () ->
-            spake2PlusDeviceService.processSpake2PlusRequest(request, TEST_PASSWORD, TEST_REQUEST_ID)
+            spake2PlusDeviceService.validateSpake2PlusRequest(request, TEST_PASSWORD, TEST_REQUEST_ID)
         );
     }
 }

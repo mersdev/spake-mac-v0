@@ -1,0 +1,10 @@
+CREATE SEQUENCE SPAKE_DEVICE_SEQ START WITH 1 INCREMENT BY 1;
+
+CREATE TABLE spake2_plus_device_data (
+    id BIGINT PRIMARY KEY,
+    request_id VARCHAR(255),
+    password VARCHAR(255),
+    w0 NUMERIC,
+    w1 NUMERIC,
+    x NUMERIC
+);

@@ -1,0 +1,24 @@
+### SPAKE2+ Device Request
+POST http://localhost:8080/api/spake2plus/device/request?password=123456
+Content-Type: application/json
+
+{
+  "vodFwVersions": "01000200",
+  "dkProtocolVersions": "03000400",
+  "btVersions": "0500",
+  "scryptConfig": "7F5000000000000000000000000000000000000000000000000000000000000000",
+  "cryptographicSalt": "C0000000000000000000000000000000",
+  "scryptCost": 16384,
+  "blockSize": 8,
+  "parallelization": 1,
+  "vehicleBrand": "0003"
+}
+
+### SPAKE2+ Device Verify
+POST http://localhost:8080/api/spake2plus/device/verify
+Content-Type: application/json
+
+{
+  "curvePointY": "04886E2F97ACE46E55BA9DD7242579F2993B64E16EF3DCAB95AFD497333D8FA12F5FF355163E43CE224E0B0E65FF02AC8E5C7BE09419C785E0CA547D55A12E2D20",
+  "vehicleEvidence": "57E2D20D8FA12F5FF355163E43CE224E"
+}

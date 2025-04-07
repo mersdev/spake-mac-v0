@@ -1,4 +1,4 @@
-package com.xdman.spake_mac_v0.model;
+package com.xdman.spake_mac_v0.model.tlv;
 
 import com.payneteasy.tlv.BerTag;
 import com.payneteasy.tlv.BerTlv;
@@ -6,13 +6,14 @@ import com.payneteasy.tlv.BerTlvBuilder;
 import com.payneteasy.tlv.BerTlvParser;
 import com.payneteasy.tlv.BerTlvs;
 import com.payneteasy.tlv.HexUtil;
+import com.xdman.spake_mac_v0.model.TlvBase;
 import lombok.Getter;
 import lombok.Setter;
 
 
 @Getter
 @Setter
-public class Spake2PlusRequestResponseTlv extends TlvBase{
+public class Spake2PlusRequestResponseTlv extends TlvBase {
   private byte[] curvePointX;           // 65 bytes (including 0x04 prefix)
   private byte[] selectedVodFwVersion;  // 2 bytes, conditional
 
