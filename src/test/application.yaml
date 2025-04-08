@@ -14,5 +14,3 @@ spring:
       hibernate:
         format_sql: true
     database: postgresql
-server:
-  port: 8080

@@ -1,26 +1,23 @@
 package com.xdman.spake_mac_v0.service;
 
 import com.xdman.spake_mac_v0.SpakeMacV0ApplicationTests;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusRequestResponseTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestResponseTlv;
 import com.xdman.spake_mac_v0.model.Spake2PlusRequestWrapper;
 import com.xdman.spake_mac_v0.model.Spake2PlusResponseWrapper;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyCommandTlv;
-import com.xdman.spake_mac_v0.model.Spake2PlusVerifyResponseTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyCommandTlv;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyResponseTlv;
 import com.xdman.spake_mac_v0.repository.Spake2PlusDeviceRepo;
 import com.xdman.spake_mac_v0.repository.Spake2PlusVehicleRepo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.math.BigInteger;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 class Spake2PlusIntegrationTest extends SpakeMacV0ApplicationTests {
 
@@ -58,7 +55,7 @@ class Spake2PlusIntegrationTest extends SpakeMacV0ApplicationTests {
         assertEquals(1, initialRequest.getParallelization(), "Parallelization should be 1");
 
         // Step 2: Device processes request and generates response
-        Spake2PlusResponseWrapper deviceWrapper = deviceService.processSpake2PlusRequest(
+        Spake2PlusResponseWrapper deviceWrapper = deviceService.validateSpake2PlusRequest(
             initialRequest, TEST_PASSWORD, TEST_REQUEST_ID);
         Spake2PlusRequestResponseTlv deviceResponse = deviceWrapper.request();
 
@@ -68,7 +65,7 @@ class Spake2PlusIntegrationTest extends SpakeMacV0ApplicationTests {
         assertEquals(0x04, deviceResponse.getCurvePointX()[0], "First byte should be 0x04");
 
         // Step 3: Vehicle processes device response and creates verify request
-        Spake2PlusVerifyCommandTlv verifyRequest = vehicleService.processSpake2PlusResponse(
+        Spake2PlusVerifyCommandTlv verifyRequest = vehicleService.validateSpake2PlusResponse(
             deviceResponse, vehicleWrapper.data());
 
         assertNotNull(verifyRequest, "Verify request should not be null");
@@ -79,7 +76,7 @@ class Spake2PlusIntegrationTest extends SpakeMacV0ApplicationTests {
         assertEquals(16, verifyRequest.getVehicleEvidence().length, "Vehicle evidence should be 16 bytes");
 
         // Step 4: Device processes verify request and generates final response
-        Spake2PlusVerifyResponseTlv verifyResponse = deviceService.processSpake2PlusVerifyRequest(
+        Spake2PlusVerifyResponseTlv verifyResponse = deviceService.validateSpake2PlusVerifyRequest(
             verifyRequest, deviceWrapper.data());
 
         System.out.println("w0: "+ deviceWrapper.data().getW0());

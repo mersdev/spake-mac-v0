@@ -1,4 +1,4 @@
-package com.xdman.spake_mac_v0.model;
+package com.xdman.spake_mac_v0.model.tlv;
 
 import com.payneteasy.tlv.BerTag;
 import com.payneteasy.tlv.BerTlv;
@@ -6,9 +6,9 @@ import com.payneteasy.tlv.BerTlvBuilder;
 import com.payneteasy.tlv.BerTlvParser;
 import com.payneteasy.tlv.BerTlvs;
 import com.payneteasy.tlv.HexUtil;
+import com.xdman.spake_mac_v0.model.TlvBase;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * SPAKE2+ VERIFY Response TLV format according to Table 5-7:
@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Setter
-public class Spake2PlusVerifyResponseTlv extends TlvBase{
+public class Spake2PlusVerifyResponseTlv extends TlvBase {
   private byte[] deviceEvidence;   // 16 bytes
 
   private enum Tags {

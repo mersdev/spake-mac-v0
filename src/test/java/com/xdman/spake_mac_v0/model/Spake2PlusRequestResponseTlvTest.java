@@ -3,6 +3,7 @@ package com.xdman.spake_mac_v0.model;
 import com.payneteasy.tlv.BerTag;
 import com.payneteasy.tlv.BerTlvBuilder;
 import com.payneteasy.tlv.HexUtil;
+import com.xdman.spake_mac_v0.model.tlv.Spake2PlusRequestResponseTlv;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

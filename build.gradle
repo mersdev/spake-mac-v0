@@ -21,7 +21,7 @@ configurations {
 
 ext {
 	berTlvVersion = '1.0-11'  // Added version for ber-tlv dependency
-	bouncycastleVersion = '1.77'  // Added version for Bouncy Castle
+	bouncycastleVersion = '1.78'  // Added version for Bouncy Castle
 }
 
 repositories {
@@ -32,6 +32,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation "com.payneteasy:ber-tlv:${berTlvVersion}"
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.flywaydb:flyway-core:9.22.3'
 	runtimeOnly 'org.postgresql:postgresql'
 
 	// Bouncy Castle dependencies
