@@ -12,6 +12,9 @@ The system consists of two main components:
    - Cryptographic salt and key derivation
    - Evidence-based verification
 
+   ![SPAKE2+ Protocol Flow](src/test/resources/Spake2Plus%20Presentation.png)
+   *Figure 1: SPAKE2+ Protocol Flow Diagram showing the four-step authentication process between Vehicle OEM and Device/SBOD*
+
 2. **Secure Payload System**
    - AES encryption with BouncyCastle provider
    - MAC (Message Authentication Code) chaining
@@ -175,4 +178,4 @@ Run tests using:
 - Maintains sequential message integrity
 - Protects against replay attacks
 - Validates all cryptographic parameters
-- Implements proper error handling 
+- Implements proper error handling

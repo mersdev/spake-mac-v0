@@ -1,4 +1,4 @@
-package com.xdman.spake_mac_v0.model;
+package com.xdman.spake_mac_v0.model.tlv;
 
 import com.payneteasy.tlv.BerTag;
 import com.payneteasy.tlv.BerTlvBuilder;

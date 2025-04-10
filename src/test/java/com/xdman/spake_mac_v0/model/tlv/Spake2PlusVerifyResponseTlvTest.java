@@ -1,4 +1,4 @@
-package com.xdman.spake_mac_v0.model;
+package com.xdman.spake_mac_v0.model.tlv;
 
 import com.payneteasy.tlv.HexUtil;
 import com.xdman.spake_mac_v0.model.tlv.Spake2PlusVerifyResponseTlv;
