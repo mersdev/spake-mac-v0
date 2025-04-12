@@ -127,12 +127,12 @@ public class Spake2PlusVehicleService {
 	return new Spake2PlusRequestWrapper(request, configurations);
   }
 
-  public Spake2PlusVerifyCommandTlv createSpake2PlusVerifyResponse(Spake2PlusRequestResponseTlv request) {
+  public Spake2PlusVerifyCommandTlv createSpake2PlusVerifyRequest(Spake2PlusRequestResponseTlv request) {
 	HttpServletRequest requestHeader = Optional.ofNullable(RequestContextHolder.getRequestAttributes())
 	  .map(attributes -> ((ServletRequestAttributes) attributes).getRequest())
 	  .orElseThrow(() -> new IllegalStateException("No active HTTP request context"));
 	Spake2PlusVehicleData configurations = spake2PlusVehicleRepo.findByRequestId(requestHeader.getRequestId());
-	return validateSpake2PlusResponse(request, configurations);
+	return validateSpake2PlusRequest(request, configurations);
   }
 
 
@@ -143,7 +143,7 @@ public class Spake2PlusVehicleService {
    * and Listing 18-6: Derivation of Evidence Keys
    * and Listing 18-7: Vehicle-side Computation of Evidence
    */
-  public Spake2PlusVerifyCommandTlv validateSpake2PlusResponse(Spake2PlusRequestResponseTlv request, Spake2PlusVehicleData config) {
+  public Spake2PlusVerifyCommandTlv validateSpake2PlusRequest(Spake2PlusRequestResponseTlv request, Spake2PlusVehicleData config) {
 
 	BigInteger w0 = config.getW0();
 	BigInteger w1 = config.getW1();

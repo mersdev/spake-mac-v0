@@ -72,7 +72,7 @@ public class Spake2PlusVehicleServiceTest extends SpakeMacV0ApplicationTests {
         Spake2PlusRequestWrapper wrapper = spake2PlusVehicleService.createSpake2PlusRequest(
           TEST_PASSWORD, TEST_SALT, TEST_REQUEST_ID
         );
-        Spake2PlusVerifyCommandTlv verifyCommand = spake2PlusVehicleService.validateSpake2PlusResponse(
+        Spake2PlusVerifyCommandTlv verifyCommand = spake2PlusVehicleService.validateSpake2PlusRequest(
             response, wrapper.data()
         );
 
@@ -94,7 +94,7 @@ public class Spake2PlusVehicleServiceTest extends SpakeMacV0ApplicationTests {
         response.setCurvePointX(new byte[32]); // Invalid curve point
 
         assertThrows(IllegalArgumentException.class, () ->
-            spake2PlusVehicleService.validateSpake2PlusResponse(response, wrapper.data())
+            spake2PlusVehicleService.validateSpake2PlusRequest(response, wrapper.data())
         );
     }
 }

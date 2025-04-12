@@ -47,7 +47,7 @@ public class Spake2PlusVehicleController {
     public ResponseEntity<VehicleVerifyCommandResponse> processVerifyRequest(
       @RequestBody VehicleVerifyCommandRequest request) {
         Spake2PlusRequestResponseTlv tlv = new Spake2PlusRequestResponseTlv().decode(request.spake2PlusRequestResponse());
-        Spake2PlusVerifyCommandTlv response = spake2PlusVehicleService.createSpake2PlusVerifyResponse(tlv);
+        Spake2PlusVerifyCommandTlv response = spake2PlusVehicleService.createSpake2PlusVerifyRequest(tlv);
         return ResponseEntity.ok(new VehicleVerifyCommandResponse(response.encode()));
     }
 }

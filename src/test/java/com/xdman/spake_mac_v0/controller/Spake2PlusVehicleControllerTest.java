@@ -72,7 +72,7 @@ public class Spake2PlusVehicleControllerTest {
     @Test
     public void testProcessVerify_ValidResponse() throws Exception {
         Spake2PlusVerifyCommandTlv verifyCommandTlv = new Spake2PlusVerifyCommandTlv().decode(VERIFY_COMMAND_TLV);
-        when(spake2PlusVehicleService.createSpake2PlusVerifyResponse(any(Spake2PlusRequestResponseTlv.class)))
+        when(spake2PlusVehicleService.createSpake2PlusVerifyRequest(any(Spake2PlusRequestResponseTlv.class)))
           .thenReturn(verifyCommandTlv);
 
         VehicleVerifyCommandRequest request = new VehicleVerifyCommandRequest(REQUEST_RESPONSE_TLV);

@@ -65,7 +65,7 @@ class Spake2PlusIntegrationTest extends SpakeMacV0ApplicationTests {
         assertEquals(0x04, deviceResponse.getCurvePointX()[0], "First byte should be 0x04");
 
         // Step 3: Vehicle processes device response and creates verify request
-        Spake2PlusVerifyCommandTlv verifyRequest = vehicleService.validateSpake2PlusResponse(
+        Spake2PlusVerifyCommandTlv verifyRequest = vehicleService.validateSpake2PlusRequest(
             deviceResponse, vehicleWrapper.data());
 
         assertNotNull(verifyRequest, "Verify request should not be null");
